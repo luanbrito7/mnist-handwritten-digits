@@ -44,8 +44,8 @@ class Network(object):
             a = sigmoid(np.dot(w, a)+b)
         return a
 
-    def map_list_to_dict(_list):
-        return {x[0]:x for x in _list}
+    def map_list_to_dict(self, _list):
+        return {i:v for i,v in enumerate(_list)}
 
     def SGD(self, training_data, epochs, mini_batch_size, eta,
             test_data=None):
@@ -74,6 +74,8 @@ class Network(object):
                 self.update_mini_batch(mini_batch, eta)
             if test_data:
                 acc_per_class = self.evaluate_classes(test_data, 10)
+                print(self.map_list_to_dict(acc_per_class))
+                print("Epoch {} : {} / {}".format(j,self.evaluate(test_data),n_test))
             else:
                 print("Epoch {} complete".format(j))
 
@@ -128,11 +130,16 @@ class Network(object):
             nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
         return (nabla_b, nabla_w)
 
-    def evaluate_classes(self, test_data, class_number):
+    def evaluate(self, test_data):
         """Return the number of test inputs for which the neural
         network outputs the correct result. Note that the neural
         network's output is assumed to be the index of whichever
         neuron in the final layer has the highest activation."""
+        test_results = [(np.argmax(self.feedforward(x)), y)
+                        for (x, y) in test_data]
+        return sum(int(x == y) for (x, y) in test_results)
+
+    def evaluate_classes(self, test_data, class_number):
         correct_output_per_class = [0] * class_number
         total_per_class = [0] * class_number
         
