@@ -45,7 +45,7 @@ class Network(object):
         return a
 
     def map_list_to_dict(self, _list):
-        return {i:v for i,v in enumerate(_list)}
+        return {i:"{:.4f}".format(v) for i,v in enumerate(_list)}
 
     def SGD(self, training_data, epochs, mini_batch_size, eta,
             test_data=None):
@@ -73,9 +73,15 @@ class Network(object):
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta)
             if test_data:
-                acc_per_class = self.evaluate_classes(test_data, 10)
-                print(self.map_list_to_dict(acc_per_class))
-                print("Epoch {} : {} / {}".format(j,self.evaluate(test_data),n_test))
+                precision_per_class = self.evaluate_classes_precision(test_data, 10)
+                recall_per_class = self.evaluate_classes_recall(test_data, 10)
+                total_acc = self.evaluate(test_data)
+                print('Epoch: ' + str(j))
+                print('Total Accuracy: ' + str(total_acc) + '/' + str(n_test))
+                print('Precision per class:')
+                print(self.map_list_to_dict(precision_per_class))
+                print('Recall per class:')
+                print(self.map_list_to_dict(recall_per_class))
             else:
                 print("Epoch {} complete".format(j))
 
@@ -130,34 +136,51 @@ class Network(object):
             nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
         return (nabla_b, nabla_w)
 
+    def get_output_tuples(self, test_data):
+        return [(np.argmax(self.feedforward(x)), y)
+                        for (x, y) in test_data]
+
     def evaluate(self, test_data):
         """Return the number of test inputs for which the neural
         network outputs the correct result. Note that the neural
         network's output is assumed to be the index of whichever
         neuron in the final layer has the highest activation."""
-        test_results = [(np.argmax(self.feedforward(x)), y)
-                        for (x, y) in test_data]
+        test_results = self.get_output_tuples(test_data)
         return sum(int(x == y) for (x, y) in test_results)
 
-    def evaluate_classes(self, test_data, class_number):
+    def evaluate_classes_precision(self, test_data, class_number):
+        output_per_class = [0] * class_number
+        correct_output_per_class = [0] * class_number
+        
+        test_results = self.get_output_tuples(test_data)
+
+        for (x, y) in test_results:
+            if x == y:
+                correct_output_per_class[int(y)] += 1
+            output_per_class[int(x)] += 1
+
+        precision_per_class = [0] * class_number
+        for i,v in enumerate(correct_output_per_class):
+            precision_per_class[i] = v / output_per_class[i]
+        
+        return precision_per_class
+
+    def evaluate_classes_recall(self, test_data, class_number):
         correct_output_per_class = [0] * class_number
         total_per_class = [0] * class_number
         
-        test_results = [(np.argmax(self.feedforward(x)), y)
-                        for (x, y) in test_data]
+        test_results = self.get_output_tuples(test_data)
 
         for (x, y) in test_results:
             if x == y:
                 correct_output_per_class[int(y)] += 1
             total_per_class[int(y)] += 1
         
-        accuracies_per_class = [0] * class_number
-
-        for i,ac in enumerate(accuracies_per_class):
-            accuracies_per_class[i] = correct_output_per_class[i]/total_per_class[i]
-        return accuracies_per_class
+        recall_per_class = [0] * class_number
+        for i,v in enumerate(correct_output_per_class):
+            recall_per_class[i] = v / total_per_class[i]
         
-
+        return recall_per_class
 
     def cost_derivative(self, output_activations, y):
         """Return the vector of partial derivatives \partial C_x /
