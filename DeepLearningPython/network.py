@@ -41,6 +41,8 @@ class Network(object):
     def feedforward(self, a):
         """Return the output of the network if ``a`` is input."""
         for b, w in zip(self.biases, self.weights):
+            #a = relu(np.dot(w, a)+b)
+            #a = tanh(np.dot(w, a)+b)
             a = sigmoid(np.dot(w, a)+b)
         return a
 
@@ -115,11 +117,15 @@ class Network(object):
         for b, w in zip(self.biases, self.weights):
             z = np.dot(w, activation)+b
             zs.append(z)
+            #activation = relu(z)
+            #activation = tanh(z)
             activation = sigmoid(z)
             activations.append(activation)
         # backward pass
         delta = self.cost_derivative(activations[-1], y) * \
             sigmoid_prime(zs[-1])
+            #relu_prime(zs[-1])
+            #tanh_prime(zs[-1])
         nabla_b[-1] = delta
         nabla_w[-1] = np.dot(delta, activations[-2].transpose())
         # Note that the variable l in the loop below is used a little
@@ -130,6 +136,8 @@ class Network(object):
         # that Python can use negative indices in lists.
         for l in range(2, self.num_layers):
             z = zs[-l]
+            #sp = relu_prime(z)
+            #sp = tanh_prime(z)
             sp = sigmoid_prime(z)
             delta = np.dot(self.weights[-l+1].transpose(), delta) * sp
             nabla_b[-l] = delta
@@ -151,7 +159,10 @@ class Network(object):
     def evaluate_classes_precision(self, test_data, class_number):
         output_per_class = [0] * class_number
         correct_output_per_class = [0] * class_number
-        
+
+        for (x, y) in test_data:
+            a = self.feedforward(x)
+            print(a)
         test_results = self.get_output_tuples(test_data)
 
         for (x, y) in test_results:
@@ -161,7 +172,10 @@ class Network(object):
 
         precision_per_class = [0] * class_number
         for i,v in enumerate(correct_output_per_class):
-            precision_per_class[i] = v / output_per_class[i]
+            if output_per_class[i] == 0:
+                precision_per_class[i] = 0
+            else:
+                precision_per_class[i] = v / output_per_class[i]
         
         return precision_per_class
 
@@ -178,7 +192,10 @@ class Network(object):
         
         recall_per_class = [0] * class_number
         for i,v in enumerate(correct_output_per_class):
-            recall_per_class[i] = v / total_per_class[i]
+            if total_per_class[i] == 0:
+                recall_per_class[i] = 0
+            else:
+                recall_per_class[i] = v / total_per_class[i]
         
         return recall_per_class
 
@@ -195,3 +212,22 @@ def sigmoid(z):
 def sigmoid_prime(z):
     """Derivative of the sigmoid function."""
     return sigmoid(z)*(1-sigmoid(z))
+
+def tanh(z):
+    return np.tanh(z)
+
+def tanh_prime(z):
+    return (1-tanh(z)**2)
+
+def relu(z):
+    return np.maximum(z, 0)
+
+def single_value_relu_prime(z):
+    if z > 0:
+        return 1
+    else:
+        return 0
+
+def relu_prime(z):
+    a = np.vectorize(single_value_relu_prime)
+    return a(z)
