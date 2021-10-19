@@ -1,4 +1,4 @@
-# %load mnist_loader.py
+# %load data_loader.py
 """
 mnist_loader
 ~~~~~~~~~~~~

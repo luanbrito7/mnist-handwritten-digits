@@ -1,9 +1,7 @@
-# %load network.py
+# %load mlp.py
 
 """
-network.py
-~~~~~~~~~~
-IT WORKS
+mlp.py
 
 A module to implement the stochastic gradient descent learning
 algorithm for a feedforward neural network.  Gradients are calculated
@@ -19,7 +17,7 @@ import random
 # Third-party libraries
 import numpy as np
 
-class Network(object):
+class MLP(object):
 
     def __init__(self, sizes):
         """The list ``sizes`` contains the number of neurons in the
@@ -75,13 +73,14 @@ class Network(object):
             if test_data:
                 precision_per_class = self.evaluate_classes_precision(test_data, 10)
                 recall_per_class = self.evaluate_classes_recall(test_data, 10)
-                total_acc = self.evaluate(test_data)
+                total_acc = self.evaluate_accuracy(test_data)
                 print('Epoch: ' + str(j))
                 print('Total Accuracy: ' + str(total_acc) + '/' + str(n_test))
                 print('Precision per class:')
                 print(self.map_list_to_dict(precision_per_class))
                 print('Recall per class:')
                 print(self.map_list_to_dict(recall_per_class))
+                print('-----------------------------------')
             else:
                 print("Epoch {} complete".format(j))
 
@@ -93,7 +92,7 @@ class Network(object):
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
         for x, y in mini_batch:
-            delta_nabla_b, delta_nabla_w = self.backprop(x, y)
+            delta_nabla_b, delta_nabla_w = self.backpropagation(x, y)
             nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
             nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
         self.weights = [w-(eta/len(mini_batch))*nw
@@ -101,7 +100,7 @@ class Network(object):
         self.biases = [b-(eta/len(mini_batch))*nb
                        for b, nb in zip(self.biases, nabla_b)]
 
-    def backprop(self, x, y):
+    def backpropagation(self, x, y):
         """Return a tuple ``(nabla_b, nabla_w)`` representing the
         gradient for the cost function C_x.  ``nabla_b`` and
         ``nabla_w`` are layer-by-layer lists of numpy arrays, similar
@@ -140,7 +139,7 @@ class Network(object):
         return [(np.argmax(self.feedforward(x)), y)
                         for (x, y) in test_data]
 
-    def evaluate(self, test_data):
+    def evaluate_accuracy(self, test_data):
         """Return the number of test inputs for which the neural
         network outputs the correct result. Note that the neural
         network's output is assumed to be the index of whichever
@@ -149,6 +148,7 @@ class Network(object):
         return sum(int(x == y) for (x, y) in test_results)
 
     def evaluate_classes_precision(self, test_data, class_number):
+        """Calculates and returns precision per class."""
         output_per_class = [0] * class_number
         correct_output_per_class = [0] * class_number
         
@@ -166,6 +166,7 @@ class Network(object):
         return precision_per_class
 
     def evaluate_classes_recall(self, test_data, class_number):
+        """Calculates and returns recall per class."""
         correct_output_per_class = [0] * class_number
         total_per_class = [0] * class_number
         
